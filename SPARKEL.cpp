@@ -22,13 +22,16 @@ using namespace std;
 int nVehicle;
 int capacity;
 
-struct User { // struktur data untuk user
+struct Account { // struktur data untuk user
     string username;
     string password;
+    bool operator==(const Account& other) const {
+        return username == other.username && password == other.password;
+    }
 };
 
-vector<User> user_list; // daftar user yang telah terdaftar
-vector<User> admin_list;
+vector<Account> user_list; // daftar user yang telah terdaftar
+vector<Account> admin_list;
 
 struct Vehicle { // struct untuk menyimpan informasi kendaraan
     string plateNumber; // nomor plat kendaraan
@@ -47,7 +50,14 @@ struct setVehicle {
     int nVehicle;
 };
 
-setVehicle VehicleType[4] = {{"motor"},{"mobil"},{"truk"},{"bus"}};
+setVehicle VehicleType[] = {
+    {"motor", 2000, 5, 0},
+    {"mobil", 5000, 5, 0},
+    {"truk", 5000, 5, 0},
+    {"bus", 5000, 5, 0}
+};
+
+const int totalVehicleType = sizeof(VehicleType) / sizeof(VehicleType[0]);
 
 /*INPUT VALIDATION*/
 
@@ -168,7 +178,7 @@ string vehicleTypeValidation() {
 /*PARKING MANAGEMENT*/
 
 void addVehicleNode(Vehicle*& head, string plateNumber, string type, time_t timeIn, time_t timeOut, float spendTime, float parkingRates, bool isFirstInsert = true) { // fungsi untuk menambahkan kendaraan ke linked list
-    Vehicle* newVehicle = new Vehicle{plateNumber, type, timeIn, timeOut, spendTime, parkingRates}; // Menambah node beserta elemen nya sekaligus
+    Vehicle* newVehicle = new Vehicle{plateNumber, type, timeIn, timeOut, spendTime, parkingRates, NULL}; // Menambah node beserta elemen nya sekaligus
     if (isFirstInsert) { // Masukan dari head
         newVehicle->next = head;
         head = newVehicle;
@@ -202,6 +212,7 @@ float parkingRates(Vehicle*& node) {
             return rates;    
         }
     }
+    return 0;
 }
 
 void saveListToFile(Vehicle* head) {
@@ -253,6 +264,15 @@ void loadTempData() {// fungsi untuk mengembalikan nilai variabel dari file
         }
         fin.close();
     }
+}
+
+void displayMenuVehicle() {
+    int index = 1;
+    cout << "Tipe kendaraan | Tarif per jam | Lahan |\n";
+    for (auto& temp : VehicleType) {
+        cout << index++ << ". " << temp.type << " | Rp" << temp.parkingRates << ",00 | " << temp.field << endl;
+    }
+    cout << index << ". Kembali\n";
 }
 
 void displayRemoveVehicle(Vehicle*& node) {
@@ -316,10 +336,7 @@ void addVehicle(Vehicle*& head){
         cout << "=======================================================\n";
         displayParkingLot(head);
         cout << "========================================================\n";
-        cout << "Tipe kendaraan | Tarif per jam | Lahan |\n";
-        for (int i = 1; i <= 4; i++) {
-            cout << i << ". " << VehicleType[i-1].type << " | Rp" << VehicleType[i-1].parkingRates << ",00 | " << VehicleType[i-1].field << endl;
-        }
+        displayMenuVehicle();
         cout << "========================================================\n";
         string type = vehicleTypeValidation(); // Input validasi untuk tipe kendaraan
         for (auto& vehicle : VehicleType) {
@@ -368,50 +385,33 @@ void changesCapacityType(int n){
     while (true) {
         system(CLEAR_SCREEN);
         cout << "====== Kapasitas Parkir =======\n";
-        cout << "Total kapasitas parkir "<< VehicleType[n-1].type << " : " << VehicleType[n-1].field << endl;
-        cout << "Kendaraan terparkir " << VehicleType[n-1].type << " : " << VehicleType[n-1].nVehicle << endl;
-        cout << "Lahan kosong "<< VehicleType[n-1].type << " : " << VehicleType[n-1].field-VehicleType[n-1].nVehicle << endl;
+        cout << "Total kapasitas parkir "<< VehicleType[n].type << " : " << VehicleType[n].field << endl;
+        cout << "Kendaraan terparkir " << VehicleType[n].type << " : " << VehicleType[n].nVehicle << endl;
+        cout << "Lahan kosong "<< VehicleType[n].type << " : " << VehicleType[n].field-VehicleType[n].nVehicle << endl;
         cout << "===============================\n";
         temp = getNumberOnly();
-        if (temp < VehicleType[n-1].nVehicle) { // Pembanding jika terdapat mobil terparkir pada saat kapasitas diubah
+        if (temp < VehicleType[n].nVehicle) { // Pembanding jika terdapat mobil terparkir pada saat kapasitas diubah
             cout << "Kapasitas tidak boleh kurang dari kendaraan yang sedang diparkir!\n";
             system("pause");
         } else {
             break;
         }
     }
-    VehicleType[n-1].field = temp;
+    VehicleType[n].field = temp;
 }
 
-void changeCapasity() {
-    int choiceCapacity;
+void changeCapacity() {
     while (true) {
         system(CLEAR_SCREEN);
-        cout << "======= Kapasitas Parkir =======\n";
-        totalCapacity();
+        cout << "========== Kapasitas Parkir ========\n";
         displayParkingCapacity();
         cout << "================================\n";
-        cout << "1. Motor \n";
-        cout << "2. Mobil \n";
-        cout << "3. Truk\n";
-        cout << "4. Bus\n";
-        cout << "5. Kembali\n";
+        displayMenuVehicle();
         cout << "================================\n";
-        choiceCapacity = getNumberOnly();
-        switch (choiceCapacity) {
-        case 1:
-            changesCapacityType(choiceCapacity);
-            break;
-        case 2:
-            changesCapacityType(choiceCapacity);
-            break;
-        case 3:
-            changesCapacityType(choiceCapacity);
-            break;
-        case 4:
-            changesCapacityType(choiceCapacity);
-            break;
-        case 5:
+        int choice = getNumberOnly();
+        if (choice >= 1 && choice <= totalVehicleType) {
+            changesCapacityType(choice-1);
+        } else if (choice == totalVehicleType + 1) {
             return;
             break;
         }
@@ -419,51 +419,34 @@ void changeCapasity() {
 }
 
 void changesFee(int n){
-    int temp;
     while (true) {
         system(CLEAR_SCREEN);
         cout << "======== Tarif Parkir ========\n";
         cout << "Harga per jam: " << VehicleType[n-1].parkingRates << endl;
         cout << "===============================\n";
-        temp = getNumberOnly();
+        int temp = getNumberOnly();
         if (temp < 0) { // Pembanding jika terdapat mobil terparkir pada saat kapasitas diubah
             cout << "Kapasitas tidak boleh kurang dari 0!\n";
             system("pause");
         } else {
-            VehicleType[n-1].parkingRates = temp;
+            VehicleType[n].parkingRates = temp;
             break;
         }
     }
 }
 
-void parkingFee(){
-    int choiceFee;
+void parkingFee() {
     while (true) {
         system(CLEAR_SCREEN);
-        cout << "======= Tarif Parkir =======\n";
+        cout << "========= Tarif Parkir =========\n";
         displayParkingCapacity();
         cout << "================================\n";
-        cout << "1. Motor \n";
-        cout << "2. Mobil \n";
-        cout << "3. Truk\n";
-        cout << "4. Bus\n";
-        cout << "5. Kembali\n";
+        displayMenuVehicle();
         cout << "================================\n";
-        choiceFee = getNumberOnly();
-        switch (choiceFee) {
-        case 1:
-            changesFee(choiceFee);
-            break;
-        case 2:
-            changesFee(choiceFee);
-            break;
-        case 3:
-            changesFee(choiceFee);
-            break;
-        case 4:
-            changesFee(choiceFee);
-            break;
-        case 5:
+        int choice = getNumberOnly();
+        if (choice >= 1 && choice <= totalVehicleType) {
+            changesFee(choice-1);
+        } else if (choice == totalVehicleType + 1) {
             return;
             break;
         }
@@ -491,28 +474,28 @@ void parkingManagement() {
         cout << "==================================\n";
         choice = getNumberOnly();
         switch (choice) {
-            case 1: // kendaraan masuk
-                system(CLEAR_SCREEN);
-                addVehicle(head);
-                break;
-            case 2: // kendaraan keluar
-                system(CLEAR_SCREEN);
-                removeVehicle(head);
-                break;
-            case 3: // tampilkan daftar kendaraan yang parkir
-                system(CLEAR_SCREEN);
-                displayParkingLot(head);
-                system("pause");
-                break;
-            case 4: // kapasitas
-                changeCapasity();
-                break;
-            case 5: // kembali ke menu login
-                parkingFee();
-                break;
-            case 6:
-                return;
-                break;
+        case 1: // kendaraan masuk
+            system(CLEAR_SCREEN);
+            addVehicle(head);
+            break;
+        case 2: // kendaraan keluar
+            system(CLEAR_SCREEN);
+            removeVehicle(head);
+            break;
+        case 3: // tampilkan daftar kendaraan yang parkir
+            system(CLEAR_SCREEN);
+            displayParkingLot(head);
+            system("pause");
+            break;
+        case 4: // kapasitas
+            changeCapacity();
+            break;
+        case 5: 
+            parkingFee();
+            break;
+        case 6:
+            return;
+            break;
         }
     }
 }
@@ -520,7 +503,6 @@ void parkingManagement() {
 void parkingManagementUser() {
     Vehicle* head = NULL; // linked list kosong saat program pertama kali dijalankan
     bool valid = true;
-    int choice;
     loadTempData();
     loadListFromFile(head);
     while (true) {
@@ -532,176 +514,27 @@ void parkingManagementUser() {
         cout << "2. Kendaraan Keluar\n" ;
         cout << "3. Logout\n" ;
         cout << "==================================\n";
-        choice = getNumberOnly();
-        switch (choice) {
-            case 1: // kendaraan masuk
-                system(CLEAR_SCREEN);
-                if (valid) {
-                    addVehicle(head);
-                    valid = false;
-                } else {
-                    cout << "satu akun hanya dapat parkir satu kendaraan\n";
-                    system("pause");
-                }
-                break;
-            case 2: // kendaraan keluar
-                system(CLEAR_SCREEN);
-                if (!valid) {
-                    removeVehicle(head);
-                    valid = true;
-                }
-                break;
-            case 3:
-                return;
-                break;
-        }
-    }
-}
-
-/*ACCOUNT & MAIN*/
-
-void saveUsers(string username, string password) { // fungsi untuk menambah data pengguna dari file "users.bin"
-    ofstream fout("users.bin", ios::app | ios::binary); // Proses pembuatan file dan pengecekan file binary
-    if(fout.is_open()) {
-        fout << username << " " << password << endl;
-        fout.close();
-    }
-}
-
-void loadUsers() { // fungsi untuk memuat data pengguna dari file "users.bin"
-    ifstream fin("users.bin", ios::in | ios::binary);
-    if (!fin.is_open()) { // Cek apakah file sudah ada atau belum
-        ofstream fout("users.bin", ios::out | ios::binary);
-        fout.close();
-        return;
-    } else {
-        while (!fin.eof()) {
-            string username, password;
-            fin >> username >> password;
-            if (!username.empty() && !password.empty()) {
-                user_list.push_back({username, password});
-            }
-        }
-        fin.close();
-    }
-}
-
-void registerUser() { // fungsi untuk mendaftarkan user baru
-    string username, password;
-    system(CLEAR_SCREEN);
-    cout << "=== REGISTER ===" << endl;
-    username = userInputValidation();
-    password = passInputValidation(true);
-    for (auto user : user_list) {
-        if (user.username == username) {
-            cout << "Username telah digunakan!\n" << endl;
-            system("pause");
-            return;
-        }
-    }
-    user_list.push_back({username, password}); // tambahkan user baru ke dalam daftar user
-    saveUsers(username, password); // simpan data pengguna ke dalam file
-    cout << "Registrasi berhasil!\n" << endl;
-    system("pause");
-}
-
-void loginUser() {// fungsi untuk melakukan login
-    string username, password;
-    cout << "=== LOGIN ===" << endl;
-    username = userInputValidation();
-    password = passInputValidation(false);
-    for (auto user : user_list) { // cek apakah username dan password sesuai dengan data yang telah terdaftar
-        if (user.username == username && user.password == password) {
-            cout << "Login berhasil!\n" << endl;
-            system("pause");
-            parkingManagementUser();
-            return;
-        }
-    }
-    cout << "Login gagal. Coba lagi.\n" << endl;
-    system("pause");
-}
-
-void saveAdmin(string username, string password) { // fungsi untuk menambah data pengguna dari file "users.bin"
-    ofstream fout("Admin.bin", ios::app | ios::binary); // Proses pembuatan file dan pengecekan file binary
-    if(fout.is_open()) {
-        fout << username << " " << password << endl;
-        fout.close();
-    }
-}
-
-void loadAdmin() { // fungsi untuk memuat data pengguna dari file "users.bin"
-    ifstream fin("Admin.bin", ios::in | ios::binary);
-    if (!fin.is_open()) { // Cek apakah file sudah ada atau belum
-        ofstream fout("Admin.bin", ios::out | ios::binary);
-        fout.close();
-        return;
-    } else {
-        while (!fin.eof()) {
-            string username, password;
-            fin >> username >> password;
-            if (!username.empty() && !password.empty()) {
-                admin_list.push_back({username, password});
-            }
-        }
-        fin.close();
-    }
-}
-
-void registerAdmin() { // fungsi untuk mendaftarkan user baru
-    string username, password;
-    system(CLEAR_SCREEN);
-    cout << "=== REGISTER ===" << endl;
-    username = userInputValidation();
-    password = passInputValidation(true);
-    for (auto admin : admin_list) {
-        if (admin.username == username) {
-            cout << "Username telah digunakan!\n" << endl;
-            system("pause");
-            return;
-        }
-    }
-    admin_list.push_back({username, password}); // tambahkan user baru ke dalam daftar user
-    saveAdmin(username, password); // simpan data pengguna ke dalam file
-    cout << "Registrasi berhasil!\n" << endl;
-    system("pause");
-}
-
-void loginAdmin() {// fungsi untuk melakukan login
-    string username, password;
-    cout << "=== LOGIN ===" << endl;
-    username = userInputValidation();
-    password = passInputValidation(false);
-    for (auto admin : admin_list) { // cek apakah username dan password sesuai dengan data yang telah terdaftar
-        if (admin.username == username && admin.password == password) {
-            cout << "Login berhasil!\n" << endl;
-            system("pause");
-            parkingManagement();
-            return;
-        }
-    }
-    cout << "Login gagal. Coba lagi.\n" << endl;
-    system("pause");
-}
-
-void menuAdmin() {
-    while (true) {
-        loadAdmin();
-        system(CLEAR_SCREEN);
-        cout << "=== MENU LOGIN ADMIN ===\n";
-        cout << "1. Login\n";
-        cout << "2. Register\n";
-        cout << "3. Kembali\n";
-        cout << "==================\n";
         int choice = getNumberOnly();
         switch (choice) {
-        case 1: // Login
+        case 1: // kendaraan masuk
             system(CLEAR_SCREEN);
-            loginAdmin();
+            if (valid) {
+                addVehicle(head);
+                valid = false;
+            } else {
+                cout << "satu akun hanya dapat parkir satu kendaraan\n";
+                system("pause");
+            }
             break;
-        case 2: // Register
+        case 2: // kendaraan keluar
             system(CLEAR_SCREEN);
-            registerAdmin();
+            if (!valid) {
+                removeVehicle(head);
+                valid = true;
+            } else {
+                cout << "Anda belum memasukan kendaraan\n";
+                system("pause");
+            }
             break;
         case 3:
             return;
@@ -710,24 +543,92 @@ void menuAdmin() {
     }
 }
 
-void menuUser() {
+/*ACCOUNT & MAIN*/
+
+void saveAccount(string username, string password, string filename) {
+    ofstream fout(filename, ios::app | ios::binary); // Proses pembuatan file dan pengecekan file binary
+    if(fout.is_open()) {
+        fout << username << " " << password << endl;
+        fout.close();
+    } 
+}
+
+void loadAccount(string filename, vector<Account>& account_list) {
+    ifstream fin(filename, ios::in | ios::binary);
+    if (!fin.is_open()) { // Cek apakah file sudah ada atau belum
+        ofstream fout(filename, ios::out | ios::binary);
+        fout.close();
+        return;
+    } else {
+        while (!fin.eof()) {
+            string username, password;
+            fin >> username >> password;
+            if (!username.empty() && !password.empty()) {
+                account_list.push_back({username, password});
+            }
+        }
+        fin.close();
+    }
+}
+
+void registerAccount(vector<Account>& account_list, string filename) { // fungsi untuk mendaftarkan user baru
+    string username, password;
+    system(CLEAR_SCREEN);
+    cout << "=== REGISTER ===" << endl;
+    username = userInputValidation();
+    password = passInputValidation(true);
+    for (auto account : account_list) {
+        if (account.username == username) {
+            cout << "Username telah digunakan!\n" << endl;
+            system("pause");
+            return;
+        }
+    }
+    account_list.push_back({username, password}); // tambahkan user baru ke dalam daftar user
+    saveAccount(username, password, filename);
+    cout << "Registrasi berhasil!\n" << endl;
+    system("pause");
+}
+
+void loginAccount(vector<Account>& account_list) {// fungsi untuk melakukan login
+    string username, password;
+    cout << "=== LOGIN ===" << endl;
+    username = userInputValidation();
+    password = passInputValidation(false);
+    for (auto account : account_list) { // cek apakah username dan password sesuai dengan data yang telah terdaftar
+        if (account.username == username && account.password == password) {
+            cout << "Login berhasil!\n" << endl;
+            system("pause");
+            if (account_list == admin_list) {
+                parkingManagement();
+            } else if (account_list == user_list) {
+                parkingManagementUser();
+            }
+            return;
+        }
+    }
+    cout << "Login gagal. Coba lagi.\n" << endl;
+    system("pause");
+}
+
+void menuLogin(vector<Account>& account_list, string accountType, string filename) {
     while (true) {
-        loadUsers();
+        loadAccount(filename, account_list);
         system(CLEAR_SCREEN);
-        cout << "=== MENU LOGIN USER ===\n";
+        cout << "=== MENU LOGIN " << accountType <<" ===\n";
         cout << "1. Login\n";
         cout << "2. Register\n";
         cout << "3. Kembali\n";
-        cout << "==================\n";
+        cout << "=======================\n";
         int choice = getNumberOnly();
         switch (choice) {
         case 1: // Login
             system(CLEAR_SCREEN);
-            loginUser();
+            loginAccount(account_list);
             break;
         case 2: // Register
             system(CLEAR_SCREEN);
-            registerUser();
+            registerAccount(account_list, filename);
             break;
         case 3:
             return;
@@ -737,9 +638,7 @@ void menuUser() {
 }
 
 int main() { // menu login
-    int pilih;
     while (true){
-        loadUsers();
         system(CLEAR_SCREEN);
         cout<<"=====SPARKEL=====\n";
         cout<<"1. Login Admin\n";
@@ -748,17 +647,17 @@ int main() { // menu login
         cout<<"=================\n";
         int pilih = getNumberOnly();
         switch(pilih){
-            case 1:
-                menuAdmin();
-                break;
-            case 2:
-                menuUser();
-                break;
-            case 3:
-                cout << "Terima kasih telah menggunakan program ini.\n";
-                system("pause");
-                return 0;
-                break;
+        case 1:
+            menuLogin(admin_list, "Admin", "Admins.bin");
+            break;
+        case 2:
+            menuLogin(user_list, "User", "Users.bin");
+            break;
+        case 3:
+            cout << "Terima kasih telah menggunakan program ini.\n";
+            system("pause");
+            return 0;
+            break;
 
         }
     }
