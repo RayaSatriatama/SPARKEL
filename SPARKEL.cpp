@@ -410,7 +410,7 @@ void changeCapacity() {
         int totalIndex = sizeof(VehicleType);
         if (choice >= 1 && choice < totalIndex) {
             changesCapacityType(choice-1);
-        } else if (choice == totalIndex) {
+        } else if (choice-1 == totalIndex) {
             return;
         }
     }
